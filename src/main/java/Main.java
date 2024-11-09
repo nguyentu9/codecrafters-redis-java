@@ -7,7 +7,7 @@ public class Main extends Thread {
     public static void main(String[] args) {
         int port = 6379;
         try (
-                ServerSocket serverSocket = new ServerSocket(port);
+                ServerSocket serverSocket = new ServerSocket(port)
         ) {
             // Since the tester restarts your program quite often, setting SO_REUSEADDR
             // ensures that we don't run into 'Address already in use' errors
@@ -24,7 +24,7 @@ public class Main extends Thread {
     }
 
     private static class ClientHandler extends Thread {
-        Socket clientSocket = null;
+        Socket clientSocket;
 
         public ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
@@ -33,13 +33,23 @@ public class Main extends Thread {
         public void run() {
             try (
                     BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))
             ) {
                 String content;
                 while ((content = reader.readLine()) != null) {
                     System.out.println("::" + content);
                     if ("ping".equalsIgnoreCase(content)) {
                         writer.write("+PONG\r\n");
+                        writer.flush();
+                    }
+
+                    if (content.toLowerCase().startsWith("echo")) {
+                        reader.readLine();
+                        content = reader.readLine();
+                        System.out.println("::" + content);
+
+                        String str = String.format("$%d\r\n%s\r\n", content.length(), content);
+                        writer.write(str);
                         writer.flush();
                     }
                 }
